@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ModelFit compares 12 frontier AI models on price, performance and usage, and recommends the best-fit model, cost and routing plan for any use case.">
+<title>ModelFit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: product shell. Sticky top bar with tabs; hero with a 3D model orbit; five tab panels (Framework, Models, Recommender, Use cases, Cost lab). Single committed dark "control room" look, matching the LinkedIn banner. */
+:root{
+  color-scheme:dark;
+  --bg:#070B16; --bg-2:#0B1222; --panel:#0F1729; --panel-2:#152038; --line:#22304B; --line-2:#2E3F60;
+  --ink:#E8EEF8; --muted:#9DAAC0; --dim:#6F7D95;
+  --teal:#3EE6C4; --teal-ink:#04241D; --teal-soft:rgba(62,230,196,.12); --violet:#A194FF; --violet-soft:rgba(161,148,255,.14); --amber:#F2C14E; --rose:#FF8A8A;
+  --p-anthropic:#F08A5D; --p-openai:#7EA8FF; --p-google:#F2C14E; --p-open:#B99BFF;
+  --f-display:'Sora','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding-inline:20px;padding-block:0 56px;
+  background-image:radial-gradient(rgba(157,170,192,.09) 1px,transparent 1.2px);background-size:24px 24px}
+a{color:var(--teal);text-underline-offset:3px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:8px}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.015em}
+p{margin:0}
+.wrap{max-width:1200px;margin-inline:auto}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
+.lede{color:var(--muted);max-width:66ch}
+.mono{font-family:var(--f-mono)}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:-20px;padding:12px 20px;background:rgba(7,11,22,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar .in{max-width:1200px;margin-inline:auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:18px;margin-right:auto}
+.cube{width:22px;height:22px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(45deg);animation:cube 9s linear infinite}
+.cube i{position:absolute;inset:0;border:1.5px solid var(--teal);background:rgba(62,230,196,.08)}
+.cube i:nth-child(1){transform:translateZ(11px)}.cube i:nth-child(2){transform:rotateY(90deg) translateZ(11px)}.cube i:nth-child(3){transform:rotateX(90deg) translateZ(11px);border-color:var(--violet)}
+@keyframes cube{to{transform:rotateX(-25deg) rotateY(405deg)}}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px}
+.tab{border:0;background:transparent;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);min-height:38px;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--teal);color:var(--teal-ink)}
+.tab .k{font-family:var(--f-mono);font-size:11px;opacity:.7}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:32px;align-items:center;padding-block:44px 24px}
+.hero h1{font-size:clamp(34px,5vw,60px);line-height:1.02;font-weight:800;margin-block:14px 18px}
+.hero h1 span{color:var(--teal)}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:12px;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink);font-weight:600;cursor:pointer;text-decoration:none;min-height:44px;transition:transform .2s ease,border-color .2s}
+.btn:hover{transform:translateY(-2px);border-color:var(--teal)}
+.btn.primary{background:var(--teal);color:var(--teal-ink);border-color:var(--teal)}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:28px}
+.stat b{display:block;font-family:var(--f-display);font-size:26px;color:var(--ink)}
+.stat span{font-size:12.5px;color:var(--muted)}
+.by{margin-top:22px;font-size:13px;color:var(--dim)}
+
+.orbit{position:relative;height:400px;perspective:1100px;--rad:250px}
+.orbit .tilt{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(-14deg)}
+.ring{position:absolute;inset:0;transform-style:preserve-3d;animation:spin 46s linear infinite}
+.orbit:hover .ring,.orbit:focus-within .ring{animation-play-state:paused}
+@keyframes spin{to{transform:rotateY(360deg)}}
+.node{position:absolute;left:50%;top:50%;width:158px;height:58px;margin:-29px 0 0 -79px;transform:rotateY(calc(var(--i)*30deg)) translateZ(var(--rad));backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:12px;border:1px solid var(--line-2);background:rgba(21,32,56,.92);display:flex;flex-direction:column;justify-content:center;padding:0 12px;cursor:pointer;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.node:hover{border-color:var(--teal)}
+.node b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node small{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.core{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(62,230,196,.55),rgba(62,230,196,.08) 55%,transparent 70%);display:grid;place-items:center;text-align:center}
+.core span{font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;color:var(--teal)}
+.core b{display:block;font-family:var(--f-display);font-size:18px;color:var(--ink);letter-spacing:0}
+.pulse{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;border-radius:50%;border:1px dashed rgba(62,230,196,.3);transform:rotateX(76deg);animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{50%{width:330px;height:330px;margin:-165px 0 0 -165px;opacity:.5}}
+.orbit-hint{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:12px;color:var(--dim)}
+
+/* panels */
+.panel{display:flex;flex-direction:column;gap:28px;padding-top:28px}
+.sec{display:flex;flex-direction:column;gap:18px}
+.sec-h{display:flex;flex-direction:column;gap:8px;max-width:780px}
+.sec-h h2{font-size:30px;line-height:1.12}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+
+/* framework */
+.pillar{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;transition:transform .3s ease}
+.pillar:hover{transform:translateY(-4px)}
+.pillar .ico{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)}
+.pillar.v .ico{background:var(--violet-soft);color:var(--violet)}
+.pillar.a .ico{background:rgba(242,193,78,.12);color:var(--amber)}
+.pillar h3{font-size:22px}
+.pillar .q{font-size:14px;color:var(--muted)}
+.crit{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.crit li{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;padding-top:10px;border-top:1px solid var(--line)}
+.crit li b{font-size:14px;font-weight:600}
+.crit li span{font-size:13px;color:var(--muted)}
+.formula{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--f-mono);font-size:14px}
+.formula .t{padding:8px 12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line-2)}
+.formula .t.hl{border-color:var(--teal);color:var(--teal)}
+.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.scale div{padding:12px;border-radius:12px;background:var(--panel-2);font-size:13px;color:var(--muted)}
+.scale b{display:block;font-family:var(--f-display);font-size:20px;color:var(--ink)}
+.finding{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start;padding:18px 0;border-top:1px solid var(--line)}
+.finding:first-child{border-top:0;padding-top:0}
+.finding .big{font-family:var(--f-display);font-size:30px;font-weight:700;color:var(--teal);min-width:110px}
+.finding h4{font-size:16px;margin-bottom:4px}
+.finding p{font-size:14px;color:var(--muted)}
+.rel{display:flex;flex-direction:column;gap:8px}
+.rel .who{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--violet)}
+.rel h4{font-size:16px}
+.rel p{font-size:13.5px;color:var(--muted)}
+.rel .pill{align-self:flex-start}
+
+/* chips, inputs */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line-2);background:var(--panel);padding:8px 14px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:500;min-height:38px;color:var(--muted)}
+.chip:hover{color:var(--ink);border-color:var(--teal)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;padding:4px 9px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
+.pill.t{background:var(--teal-soft);border-color:transparent;color:var(--teal)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
+.d-anthropic{background:var(--p-anthropic)}.d-openai{background:var(--p-openai)}.d-google{background:var(--p-google)}.d-open{background:var(--p-open)}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+select,input[type=number],textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg-2);border:1px solid var(--line-2);border-radius:10px;padding:9px 12px;min-height:42px;width:100%}
+textarea{min-height:110px;resize:vertical;line-height:1.5}
+label.lab{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line-2);background:var(--bg-2);border-radius:10px;padding:8px 11px;font-size:13px;cursor:pointer;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"]{border-color:var(--teal);color:var(--ink);background:var(--teal-soft)}
+.fieldset{display:flex;flex-direction:column;gap:8px}
+.fieldset > span{font-size:12.5px;color:var(--muted);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.view-toggle{display:flex;gap:4px;padding:4px;border-radius:10px;border:1px solid var(--line-2);background:var(--panel)}
+.view-toggle button{border:0;background:transparent;padding:7px 12px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:13px}
+.view-toggle button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink)}
+
+/* model cards (3D flip) */
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.mcard{perspective:1000px;height:330px;--rx:0deg;--ry:0deg}
+.mcard .tiltw{position:relative;width:100%;height:100%;transform-style:preserve-3d;transform:rotateX(var(--rx)) rotateY(var(--ry));transition:transform .15s ease-out}
+.mcard .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.mcard.flip .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(160deg,var(--panel-2),var(--panel) 60%);padding:18px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.face.back{transform:rotateY(180deg);gap:10px}
+.mcard{cursor:pointer}
+.flipbtn{align-self:flex-start;border:0;background:transparent;color:var(--teal);font-family:var(--f-mono);font-size:12px;padding:6px 0;cursor:pointer;min-height:32px}
+.mcard.flip .face:not(.back) .flipbtn,.mcard:not(.flip) .back .flipbtn{visibility:hidden}
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mhead h3{font-size:17px;line-height:1.2}
+.mprice{display:flex;align-items:baseline;gap:6px}
+.mprice b{font-family:var(--f-display);font-size:26px}
+.mprice span{font-size:12px;color:var(--muted)}
+.ratings{display:flex;flex-direction:column;gap:7px;margin-top:auto}
+.rt{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.segs{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.segs i{height:6px;border-radius:3px;background:var(--line)}
+.segs i.on{background:var(--teal)}
+.flip-hint{font-size:11.5px;color:var(--dim);font-family:var(--f-mono)}
+.back p{font-size:13px;color:var(--muted)}
+.back h4{font-size:12px;font-family:var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal);font-weight:500}
+.back .links{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;position:relative;z-index:2;font-size:13px}
+.caps{display:flex;flex-wrap:wrap;gap:6px}
+
+/* table */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:1060px;font-size:13.5px}
+th,td{padding:12px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--panel-2);cursor:pointer;user-select:none;white-space:nowrap}
+th[aria-sort="ascending"]::after{content:" ▲";color:var(--teal)}th[aria-sort="descending"]::after{content:" ▼";color:var(--teal)}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:var(--panel-2)}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.mini{display:inline-grid;grid-template-columns:repeat(5,8px);gap:2px;vertical-align:middle}
+.mini i{width:8px;height:8px;border-radius:2px;background:var(--line)}
+.mini i.on{background:var(--teal)}
+
+/* recommender */
+.rec{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:20px;align-items:start}
+.form{display:flex;flex-direction:column;gap:16px;position:sticky;top:84px}
+.detect{display:flex;flex-wrap:wrap;gap:6px;min-height:24px}
+.row2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.result{display:flex;flex-direction:column;gap:16px}
+.topcard{perspective:1200px}
+.topcard .tc{transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .15s ease-out;border-radius:20px;border:1px solid var(--teal);background:linear-gradient(150deg,rgba(62,230,196,.14),var(--panel) 55%);padding:24px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;box-shadow:0 20px 60px rgba(62,230,196,.12)}
+.topcard.pop .tc{animation:pop .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop{from{opacity:.3;transform:translateY(14px) rotateX(10deg)}to{opacity:1}}
+.ringw{position:relative;width:120px;height:120px}
+.ringw svg{width:120px;height:120px;transform:rotate(-90deg)}
+.ringw circle{fill:none;stroke-width:10}
+.ringw .bg{stroke:var(--line)}
+.ringw .fg{stroke:var(--teal);stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.ringw .lbl{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ringw .lbl b{font-family:var(--f-display);font-size:28px;display:block;line-height:1}
+.ringw .lbl span{font-size:11px;color:var(--muted)}
+.tc h3{font-size:26px;margin-block:6px 8px}
+.why{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.why li{display:flex;gap:8px;align-items:flex-start}
+.why li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--teal);margin-top:8px;flex:none}
+.why li.no::before{background:var(--amber)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi b{display:block;font-family:var(--f-display);font-size:22px;margin-top:2px}
+.rank{display:flex;flex-direction:column;gap:8px}
+.rrow{display:grid;grid-template-columns:28px minmax(0,1.3fr) minmax(0,1fr) 90px;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:13.5px;cursor:pointer;text-align:left;width:100%}
+.rrow:hover{border-color:var(--line-2)}
+.rrow .n{font-family:var(--f-mono);color:var(--dim)}
+.rrow .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.rrow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--teal));transition:width .6s ease}
+.rrow .v{text-align:right;font-family:var(--f-mono);font-size:12.5px}
+.route{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:center}
+.route .leg{padding:14px;border-radius:14px;background:var(--panel-2);border:1px solid var(--line-2)}
+.route .leg span{font-size:12px;color:var(--muted)}
+.route .leg b{display:block;font-size:15px;margin-top:2px}
+.route .arrow{font-family:var(--f-mono);color:var(--teal);font-size:12px;text-align:center}
+.excl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.excl div{display:flex;gap:10px;flex-wrap:wrap}
+.excl b{color:var(--ink);font-weight:500;min-width:160px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+/* use cases */
+.ucase{display:flex;flex-direction:column;gap:12px;transition:transform .25s ease,border-color .25s}
+.ucase:hover{transform:translateY(-4px);border-color:var(--line-2)}
+.ucase .from{font-size:13px;color:var(--muted);border-left:2px solid var(--violet);padding-left:10px}
+.ucase .res{margin-top:auto;display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px}
+.ucase .res div{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px}
+.ucase .res span:first-child{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding-top:2px}
+
+/* cost lab */
+.costs{display:flex;flex-direction:column;gap:8px}
+.crow{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 100px;gap:12px;align-items:center;font-size:13.5px}
+.crow .bar{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.crow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--teal));transition:width .5s ease}
+.crow .v{text-align:right;font-family:var(--f-mono);font-size:12.5px}
+.lab-grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+
+footer{margin-top:56px;border-top:1px solid var(--line);padding-top:24px;display:flex;flex-direction:column;gap:12px;font-size:13px;color:var(--muted)}
+footer ul{margin:0;padding-left:18px;columns:3;column-gap:28px}
+footer li{margin-bottom:4px;break-inside:avoid}
+
+@media (max-width:1020px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.rec,.lab-grid{grid-template-columns:minmax(0,1fr)}.form{position:static}}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}.grid3{grid-template-columns:minmax(0,1fr)}.grid2{grid-template-columns:minmax(0,1fr)}.scale{grid-template-columns:repeat(2,minmax(0,1fr))}footer ul{columns:1}.orbit{--rad:190px;height:340px}}
+@media (max-width:560px){.cards{grid-template-columns:minmax(0,1fr)}.orbit{--rad:140px;height:300px}.node{width:128px;margin-left:-64px}.kpis{grid-template-columns:minmax(0,1fr)}.row2{grid-template-columns:minmax(0,1fr)}.route{grid-template-columns:minmax(0,1fr)}.rrow{grid-template-columns:24px minmax(0,1fr) 80px}.rrow .bar{display:none}.crow{grid-template-columns:minmax(0,1fr) 90px}.crow .bar{grid-column:1/-1;order:3}.tc{grid-template-columns:minmax(0,1fr)!important}.finding{grid-template-columns:minmax(0,1fr)}.tab .k{display:none}}
+@media (prefers-reduced-motion:reduce){.ring,.cube,.pulse{animation:none}.mcard .inner,.mcard .tiltw,.topcard .tc{transition:none}*{scroll-behavior:auto}}
+</style>
+
+</head>
+<body>
+<div class="bar">
+  <div class="in">
+    <div class="logo"><div class="cube" aria-hidden="true"><i></i><i></i><i></i></div>ModelFit</div>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="t-framework" aria-controls="framework" aria-selected="true"><span class="k">01</span>Framework</button>
+      <button class="tab" role="tab" id="t-models" aria-controls="models" aria-selected="false"><span class="k">02</span>Models</button>
+      <button class="tab" role="tab" id="t-recommender" aria-controls="recommender" aria-selected="false"><span class="k">03</span>Recommender</button>
+      <button class="tab" role="tab" id="t-usecases" aria-controls="usecases" aria-selected="false"><span class="k">04</span>Use cases</button>
+      <button class="tab" role="tab" id="t-cost" aria-controls="cost" aria-selected="false"><span class="k">05</span>Cost lab</button>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+
+<header class="hero">
+  <div>
+    <p class="eyebrow">AI model selection · 12 frontier models · October 2026</p>
+    <h1>Match every AI task to the <span>right model</span>, at the right cost.</h1>
+    <p class="lede">ModelFit compares 12 frontier and open-weight models on price, performance and usage, then recommends the best fit for your use case, including when to route simple steps to a cheaper model.</p>
+    <div class="cta">
+      <button class="btn primary" data-go="recommender">Find my model <span aria-hidden="true">→</span></button>
+      <button class="btn" data-go="models">Explore the 12 models</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b class="num" id="st-spread">179x</b><span>output price spread</span></div>
+      <div class="stat"><b>3</b><span>pillars, 9 criteria</span></div>
+      <div class="stat"><b>9</b><span>real enterprise scenarios</span></div>
+    </div>
+    <p class="by">Designed and built by Muhammad Zaigham, AI Product Manager · Agentic AI, RAG and GenAI products</p>
+  </div>
+  <div class="orbit" aria-label="The 12 models. Select one to open its card.">
+    <div class="pulse" aria-hidden="true"></div>
+    <div class="core" aria-hidden="true"><div><span>ROUTER</span><b>12 models</b></div></div>
+    <div class="tilt"><div class="ring" id="ring"></div></div>
+    <p class="orbit-hint">Hover to pause · select a model to open it</p>
+  </div>
+</header>
+
+<!-- 01 FRAMEWORK -->
+<section class="panel" role="tabpanel" id="framework" aria-labelledby="t-framework">
+  <div class="sec">
+    <div class="sec-h">
+      <p class="eyebrow">01 · The framework</p>
+      <h2>How the 12 models are compared</h2>
+      <p class="lede">Every model is scored on three pillars. Price is measured from published list prices. Performance is an indicative 1 to 5 rating built from public benchmarks and provider positioning. Usage covers what it takes to run the model in production.</p>
+    </div>
+    <div class="grid3">
+      <article class="box pillar">
+        <div class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Price</h3><p class="q">What does it cost to serve one request, and a month of requests?</p>
+        <ul class="crit">
+          <li><b>Input and output price</b><span>US dollars per 1M tokens, from public pricing as of October 2026.</span></li>
+          <li><b>Blended price</b><span>3 input tokens for every 1 output token, the common industry convention.</span></li>
+          <li><b>Cost to serve</b><span>Monthly cost for your volume and token sizes, computed in the Recommender and Cost lab.</span></li>
+        </ul>
+      </article>
+      <article class="box pillar v">
+        <div class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+        <h3>Performance</h3><p class="q">How well does it do the job your workflow needs?</p>
+        <ul class="crit">
+          <li><b>Reasoning depth</b><span>Multi-step logic, analysis and expert questions (for example GPQA, HLE).</span></li>
+          <li><b>Agentic reliability</b><span>Tool calls, multi-step workflows and operating screens (for example OSWorld, DeepSWE).</span></li>
+          <li><b>Multimodal understanding</b><span>Images and scanned documents; audio and video where supported.</span></li>
+        </ul>
+      </article>
+      <article class="box pillar a">
+        <div class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Usage</h3><p class="q">Can you run it the way your product and client need?</p>
+        <ul class="crit">
+          <li><b>Speed</b><span>How quickly it responds, rated 1 to 5 against real-time, interactive and batch needs.</span></li>
+          <li><b>Context window</b><span>How much text fits in one request, from 262K to about 1M tokens.</span></li>
+          <li><b>Deployment</b><span>Hosted API only, or open weights you can run in your own cloud region.</span></li>
+        </ul>
+      </article>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="box sec">
+      <h3>How the recommender scores a model</h3>
+      <p class="muted" style="font-size:14px">Models that cannot do the job are removed first (for example, no image input for a scanning task). The rest are scored, then ranked.</p>
+      <div class="formula" aria-label="Fit equals capability match times speed fit times quality and cost blend">
+        <span class="t hl">Fit</span><span>=</span><span class="t">Capability match</span><span>×</span><span class="t">Speed fit</span><span>×</span><span class="t">( quality weight × strength + cost weight × cost score )</span>
+      </div>
+      <p class="muted" style="font-size:13.5px">Capability match drops sharply when a rating is below what the task needs. Cost score is relative on a log scale across the remaining models. You set the quality and cost weights with one slider.</p>
+    </div>
+    <div class="box sec">
+      <h3>Rating scale for performance and speed</h3>
+      <div class="scale">
+        <div><b>1</b>Not suited</div><div><b>2</b>Simple tasks</div><div><b>3</b>Solid</div><div><b>4</b>Strong</div><div><b>5</b>Frontier</div>
+      </div>
+      <p class="muted" style="font-size:13px">Ratings are my professional assessment, triangulated from public benchmarks and provider positioning. They are indicative, not lab results. Each model card cites its evidence.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <p class="eyebrow">What the comparison shows</p>
+      <h2>Five findings that change how you buy AI</h2>
+    </div>
+    <div class="box" id="findings"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">
+      <p class="eyebrow">Relevance to delivery</p>
+      <h2>Where each pillar decided the outcome in my work</h2>
+      <p class="lede">The framework comes from shipping AI in telecom, government and client automation. These are the moments each pillar mattered most.</p>
+    </div>
+    <div class="grid2" id="relevance"></div>
+  </div>
+</section>
+
+<!-- 02 MODELS -->
+<section class="panel" role="tabpanel" id="models" aria-labelledby="t-models" hidden>
+  <div class="sec-h">
+    <p class="eyebrow">02 · The models</p>
+    <h2>12 models, 4 providers, one scorecard</h2>
+    <p class="lede">Select a card to flip it for evidence, best fit and source links. Switch to the table to sort by any column.</p>
+  </div>
+  <div class="toolbar">
+    <div class="chips" role="group" aria-label="Filter by provider" id="provFilter">
+      <button class="chip" aria-pressed="true" data-f="all">All 12</button>
+      <button class="chip" aria-pressed="false" data-f="anthropic"><span class="dot d-anthropic"></span> Anthropic</button>
+      <button class="chip" aria-pressed="false" data-f="openai"><span class="dot d-openai"></span> OpenAI</button>
+      <button class="chip" aria-pressed="false" data-f="google"><span class="dot d-google"></span> Google</button>
+      <button class="chip" aria-pressed="false" data-f="open"><span class="dot d-open"></span> Open weights</button>
+    </div>
+    <div class="view-toggle" role="group" aria-label="View">
+      <button aria-pressed="true" data-v="cards">Cards</button><button aria-pressed="false" data-v="table">Table</button>
+    </div>
+  </div>
+  <div class="cards" id="cards"></div>
+  <div class="tbl" id="tableWrap" hidden>
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 03 RECOMMENDER -->
+<section class="panel" role="tabpanel" id="recommender" aria-labelledby="t-recommender" hidden>
+  <div class="sec-h">
+    <p class="eyebrow">03 · Recommender</p>
+    <h2>Describe your use case. Get the best-fit model.</h2>
+    <p class="lede">Type what the AI should do, or start from a real scenario. ModelFit reads your description, sets the requirements, and ranks all 12 models with a cost estimate and a routing plan. Adjust any setting and the result updates instantly.</p>
+  </div>
+  <div class="fieldset">
+    <span>Start from a scenario</span>
+    <div class="chips" id="presetChips"></div>
+  </div>
+  <div class="rec">
+    <form class="box form" id="recForm" autocomplete="off">
+      <label class="lab" for="desc">Your use case
+        <textarea id="desc" placeholder="Example: An agent reads scanned invoices, checks them against purchase orders and updates the ERP. About 12,000 invoices per day."></textarea>
+      </label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="submit" class="btn primary" style="min-height:40px;padding:9px 16px">Analyze description</button>
+        <span class="muted" style="font-size:12.5px">Sets the fields below from your words.</span>
+      </div>
+      <div class="detect" id="detect" aria-live="polite"></div>
+      <div class="fieldset"><span>Input type</span><div class="seg" data-k="modality">
+        <button type="button" data-v="text">Text</button><button type="button" data-v="images">Images and scans</button><button type="button" data-v="av">Audio or video</button><button type="button" data-v="screens">Screens</button></div></div>
+      <div class="fieldset"><span>Reasoning needed</span><div class="seg" data-k="reasoning">
+        <button type="button" data-v="light">Light</button><button type="button" data-v="moderate">Moderate</button><button type="button" data-v="deep">Deep</button></div></div>
+      <div class="fieldset"><span>Agentic level</span><div class="seg" data-k="agentic">
+        <button type="button" data-v="none">None</button><button type="button" data-v="tools">Tool calls</button><button type="button" data-v="multi">Multi-step workflow</button><button type="button" data-v="screens">Operates screens</button></div></div>
+      <div class="fieldset"><span>Response speed</span><div class="seg" data-k="latency">
+        <button type="button" data-v="realtime">Real-time</button><button type="button" data-v="interactive">Interactive</button><button type="button" data-v="batch">Batch</button></div></div>
+      <div class="fieldset"><span>Data residency</span><div class="seg" data-k="residency">
+        <button type="button" data-v="cloud">Approved cloud API</button><button type="button" data-v="selfhost">Must self-host</button></div></div>
+      <div class="row2">
+        <label class="lab" for="reqs">Transactions per day<input id="reqs" type="number" min="0" step="100" value="10000"></label>
+        <label class="lab" for="tin">Input tokens each<input id="tin" type="number" min="0" step="100" value="2000"></label>
+        <label class="lab" for="tout">Output tokens each<input id="tout" type="number" min="0" step="50" value="500"></label>
+      </div>
+      <div class="fieldset">
+        <span>Priority: <b id="qOut" style="color:var(--ink)">Balanced</b></span>
+        <input id="quality" type="range" min="0" max="100" step="5" value="60" aria-label="Priority between lowest cost and highest quality">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--dim)"><span>Lowest cost</span><span>Highest quality</span></div>
+      </div>
+    </form>
+    <div class="result" id="result" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- 04 USE CASES -->
+<section class="panel" role="tabpanel" id="usecases" aria-labelledby="t-usecases" hidden>
+  <div class="sec-h">
+    <p class="eyebrow">04 · Use cases</p>
+    <h2>Nine scenarios from real enterprise AI work</h2>
+    <p class="lede">Each scenario comes from telecom, government or client automation work. The recommendation is computed live by the same engine as the Recommender. Open any scenario to adjust it.</p>
+  </div>
+  <div class="chips" role="group" aria-label="Filter scenarios" id="caseFilter"></div>
+  <div class="grid3" id="ucases"></div>
+</section>
+
+<!-- 05 COST LAB -->
+<section class="panel" role="tabpanel" id="cost" aria-labelledby="t-cost" hidden>
+  <div class="sec-h">
+    <p class="eyebrow">05 · Cost lab</p>
+    <h2>What a workload costs, and what routing saves</h2>
+    <p class="lede">Price a workload on every model, then blend a premium and an economy model to see the saving from sending only the hard requests to the premium tier.</p>
+  </div>
+  <div class="lab-grid">
+    <div class="box sec">
+      <label class="lab" for="c-reqs">Transactions per day<input id="c-reqs" type="number" min="0" step="100" value="10000"></label>
+      <label class="lab" for="c-tin">Input tokens each<input id="c-tin" type="number" min="0" step="100" value="2000"></label>
+      <label class="lab" for="c-tout">Output tokens each<input id="c-tout" type="number" min="0" step="50" value="500"></label>
+      <hr style="border:0;border-top:1px solid var(--line);margin:4px 0;width:100%">
+      <label class="lab" for="c-prem">Premium model, hard requests<select id="c-prem"></select></label>
+      <label class="lab" for="c-econ">Economy model, everything else<select id="c-econ"></select></label>
+      <div class="fieldset"><span>Share sent to premium: <b id="c-shareOut" style="color:var(--ink)">20%</b></span><input id="c-share" type="range" min="0" max="100" step="5" value="20" aria-label="Share of requests sent to premium model"></div>
+      <div class="kpi" style="background:var(--teal-soft);border-color:transparent"><span>Routed monthly cost</span><b class="num" id="c-routed">$0</b><span id="c-save" style="color:var(--ink)"></span></div>
+    </div>
+    <div class="box sec">
+      <h3>Monthly cost if every request used one model</h3>
+      <div class="costs" id="c-costs"></div>
+      <p class="muted" style="font-size:12.5px">List prices, 30 days a month, no caching or batch discounts. Real invoices vary by provider, region and contract.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><b style="color:var(--ink)">Method and sources.</b> Prices and release dates come from provider pages and public reporting as of October 6, 2026. Prices change often, so confirm on the official page before quoting a figure. Performance and speed ratings are my indicative assessment from public benchmarks and provider positioning. Recommendations are a starting point for a proper evaluation on your own test cases.</p>
+  <ul id="srcList"></ul>
+  <p>ModelFit · Designed and built by Muhammad Zaigham, AI Product Manager</p>
+</footer>
+</main>
+
+<script>
+
+const OFFICIAL = {
+  anthropic:'https://www.anthropic.com/pricing',
+  openai:'https://openai.com/api/pricing/',
+  google:'https://ai.google.dev/gemini-api/docs/pricing',
+  deepseek:'https://api-docs.deepseek.com/quick_start/pricing',
+  qwen:'https://huggingface.co/Qwen'
+};
+const PROV = {anthropic:'Anthropic', openai:'OpenAI', google:'Google', open:'Open weights'};
+// R = reasoning, A = agentic reliability, M = multimodal, S = speed. Indicative 1 to 5 ratings.
+const MODELS = [
+  {id:'fable',n:'Claude Fable 5.1',prov:'anthropic',maker:'Anthropic',tier:'Frontier',dl:'Sep 1, 2026',d:'2026-09-01',ctx:'1M',in:10,out:50,R:5,A:5,M:4,S:2,img:true,av:false,cu:true,open:null,
+   ev:'Anthropic\'s top tier, with added safeguards for sensitive domains. 1M context, 128K output.',best:'High-stakes analysis where a wrong answer is expensive.',watch:'Highest price tier and slower responses. Reserve it for the hardest requests.',
+   src:[['Pricing source','https://anotherwrapper.com/llm-pricing/claude-fable-5-1']],off:'anthropic'},
+  {id:'opus',n:'Claude Opus 5.5',prov:'anthropic',maker:'Anthropic',tier:'Frontier',dl:'Sep 22, 2026',d:'2026-09-22',ctx:'1M',in:4,out:20,R:5,A:5,M:4,S:3,img:true,av:false,cu:true,open:null,
+   ev:'Built for long-running agentic work and complex knowledge tasks. Offered on 9 providers including AWS Bedrock, Google Vertex and Azure.',best:'Multi-step agents and document-heavy reasoning.',watch:'Premium output price. Pair it with a cheaper model for simple steps.',
+   src:[['Pricing and specs','https://cloudprice.net/models/claude-opus-5-5']],off:'anthropic'},
+  {id:'sonnet',n:'Claude Sonnet 5.5',prov:'anthropic',maker:'Anthropic',tier:'Workhorse',dl:'Sep 28, 2026',d:'2026-09-28',ctx:'1M',in:2,out:10,R:4,A:4,M:4,S:4,img:true,av:false,cu:true,open:null,
+   ev:'A faster, lower-cost complement to Opus 5.5, about 30% faster at half the price.',best:'Everyday agent steps, coding and polished documents.',watch:'Step up to Opus for the deepest multi-step reasoning.',
+   src:[['Pricing and specs','https://llm-stats.com/models/claude-sonnet-5-5']],off:'anthropic'},
+  {id:'astra',n:'GPT-6 Astra',prov:'openai',maker:'OpenAI',tier:'Frontier',dl:'Sep 3, 2026',d:'2026-09-03',ctx:'~1M',in:10,out:50,R:5,A:5,M:4,S:2,img:true,av:false,cu:true,open:null,
+   ev:'Operates software through screens. OSWorld 2.0: 72.6%, against 65.7% for GPT-5.6 Sol.',best:'Automating legacy tools that have no API.',watch:'Highest price tier. Its reasoning is harder to monitor, so plan governance.',
+   src:[['Launch report','https://datanorth.ai/news/openai-launches-gpt-6-astra']],off:'openai'},
+  {id:'sol',n:'GPT-6.1 Sol',prov:'openai',maker:'OpenAI',tier:'Workhorse',dl:'Sep 29, 2026',d:'2026-09-29',ctx:'1.05M',in:2,out:10,R:4,A:5,M:4,S:3,img:true,av:false,cu:true,open:null,
+   ev:'Nearly matches Astra on agentic coding, computer use and professional work at one-fifth of its token price.',best:'Default model for agentic business workflows.',watch:'Streams slower than GPT-6 Sol. Use lower effort settings for interactive chat.',
+   src:[['Pricing and specs','https://runtimewire.com/models/openai/gpt-6.1-sol'],['Launch report','https://aphnetworks.com/news/32271-openai-launches-gpt-61-sol-nearly-matches-gpt-6-astra-lower-cost']],off:'openai'},
+  {id:'luna',n:'GPT-6 Luna',prov:'openai',maker:'OpenAI',tier:'Efficient',dl:'Sep 22, 2026',d:'2026-09-22',ctx:'1.05M',in:0.10,out:0.50,R:2,A:2,M:3,S:5,img:true,av:false,cu:false,open:null,
+   ev:'Built for high-volume jobs with a clear goal, such as document field extraction and ticket summaries.',best:'Routing, classification and extraction at very high volume.',watch:'Weaker on complex execution. Validate outputs before acting on them.',
+   src:[['Pricing','https://anotherwrapper.com/llm-pricing/gpt-6-luna'],['Launch report','https://datanorth.ai/news/openai-launches-gpt-6-sol-and-luna']],off:'openai'},
+  {id:'gpro',n:'Gemini 3.1 Pro',prov:'google',maker:'Google',tier:'Frontier',dl:'Preview',d:'2026-06-01',ctx:'1M',in:2,out:12,R:5,A:3,M:5,S:3,img:true,av:true,cu:false,open:null,
+   ev:'Google\'s current flagship while 3.5 Pro is delayed. GPQA Diamond: 94.3%. Reads audio, video, PDF and images natively.',best:'Complex multimodal reasoning over scans, drawings and recordings.',watch:'Still in preview. Prompts over 200K tokens cost more.',
+   src:[['Status and benchmarks','https://www.eesel.ai/blog/gemini-3-5-pro'],['Model lineup','https://claw.aguidetocloud.com/google/gemini-api/models/']],off:'google'},
+  {id:'gflash',n:'Gemini 3.8 Flash',prov:'google',maker:'Google',tier:'Workhorse',dl:'Sep 2, 2026',d:'2026-09-02',ctx:'1M',in:0.75,out:3.75,R:4,A:4,M:5,S:4,img:true,av:true,cu:false,open:null,
+   ev:'Runs extra reasoning steps and calls tools iteratively on complex tasks. HLE-Verified: 54.9%.',best:'Fast multimodal agents at scale, including audio and video.',watch:'First-token latency can be high on hard prompts.',
+   src:[['Launch report','https://www.deccanchronicle.com/technology/google-launches-gemini-38-flash-with-enhanced-reasoning-1984543'],['Pricing','https://pricepertoken.com/pricing-page/model/google-gemini-3.8-flash']],off:'google'},
+  {id:'glite',n:'Gemini 3.5 Flash-Lite',prov:'google',maker:'Google',tier:'Efficient',dl:'2026',d:'2026-07-15',ctx:'1M',in:0.30,out:2.50,R:2,A:2,M:4,S:5,img:true,av:true,cu:false,open:null,
+   ev:'Tuned for document processing and batch workflows at around 350 tokens per second.',best:'Bulk OCR and document extraction.',watch:'Light reasoning only. Escalate ambiguous documents.',
+   src:[['Launch report','https://www.kucoin.com/hi/news/flash/google-launches-gemini-3-6-flash-delays-gemini-3-5-pro-release']],off:'google'},
+  {id:'dspro',n:'DeepSeek V4 Pro',prov:'open',maker:'DeepSeek',tier:'Workhorse',dl:'Apr 2026',d:'2026-04-24',ctx:'1M',in:1.74,out:3.48,R:4,A:3,M:1,S:3,img:false,av:false,cu:false,open:'MIT',
+   ev:'Mixture-of-experts model with 1.6T total and 49B active parameters, released under the MIT license.',best:'Strong text reasoning you can host in your own cloud region.',watch:'Text only. Run a security and governance review before adoption.',
+   src:[['Pricing','https://anotherwrapper.com/llm-pricing/deepseek-v4-pro-max'],['Release report','https://www.gigazine.net/gsc_news/en/20260424-deepseek-v4']],off:'deepseek'},
+  {id:'dsflash',n:'DeepSeek V4 Flash',prov:'open',maker:'DeepSeek',tier:'Efficient',dl:'Apr 2026',d:'2026-04-24',ctx:'1M',in:0.14,out:0.28,R:3,A:2,M:1,S:5,img:false,av:false,cu:false,open:'MIT',
+   ev:'Mixture-of-experts model with 284B total and 13B active parameters. Among the lowest token prices available.',best:'Cheap, fast text steps and private deployments.',watch:'Text only in this version. Same governance review applies.',
+   src:[['Pricing','https://anotherwrapper.com/llm-pricing/deepseek-v4-flash'],['Release report','https://www.gigazine.net/gsc_news/en/20260424-deepseek-v4']],off:'deepseek'},
+  {id:'qwen',n:'Qwen3.8-27B',prov:'open',maker:'Alibaba Qwen',tier:'Efficient',dl:'Aug 14, 2026',d:'2026-08-14',ctx:'262K',in:0.45,out:3.20,R:3,A:3,M:3,S:4,img:true,av:false,cu:false,open:'Apache 2.0',
+   ev:'Compact open model with vision input, released under Apache 2.0. Small enough to fine-tune and host privately.',best:'Fine-tuned, in-region assistants and edge deployments.',watch:'Shorter context than the others. Plan retrieval carefully.',
+   src:[['Pricing','https://anotherwrapper.com/llm-pricing/qwen3.8-27b'],['Release timeline','https://www.scriptbyai.com/qwen-timeline/']],off:'qwen'}
+];
+MODELS.forEach(m=>{ m.blend = (3*m.in + m.out)/4; });
+
+function monthlyCost(m, reqs, tin, tout){ return reqs*30*(tin*m.in + tout*m.out)/1e6; }
+
+const NEED_R = {light:2, moderate:3, deep:5};
+const NEED_A = {none:1, tools:3, multi:4, screens:5};
+const NEED_S = {realtime:4, interactive:3, batch:1};
+const MODALITY_LABEL = {text:'text', images:'images and scans', av:'audio or video', screens:'screen control'};
+
+function fit(have, need){ if(have>=need) return 1; const r = have/need; return r*r; }
+
+function recommend(o){
+  // o: {modality, reasoning, agentic, reqs, tin, tout, latency, residency, quality (0..1)}
+  const excluded = [], cands = [];
+  for(const m of MODELS){
+    let why = null;
+    if(o.residency==='selfhost' && !m.open) why = 'Not open weights, so it cannot be self-hosted';
+    else if(o.modality==='av' && !m.av) why = 'No native audio or video input';
+    else if(o.modality==='images' && !m.img) why = 'No image input';
+    else if((o.modality==='screens' || o.agentic==='screens') && !m.cu) why = 'Not built for operating screens';
+    if(why){ excluded.push({m, why}); continue; }
+    const nR = NEED_R[o.reasoning], nA = NEED_A[o.agentic], nM = (o.modality==='images'||o.modality==='av')?4:1, nS = NEED_S[o.latency];
+    const cap = fit(m.R,nR)*fit(m.A,nA)*fit(m.M,nM);
+    const spd = Math.sqrt(fit(m.S,nS));
+    const cost = monthlyCost(m, o.reqs, o.tin, o.tout);
+    const dims = [m.R]; if(o.agentic!=='none') dims.push(m.A); if(nM>1) dims.push(m.M);
+    const exc = dims.reduce((x,y)=>x+y,0)/dims.length/5;
+    cands.push({m, cap, spd, cost, exc, nR, nA, nM, nS});
+  }
+  if(!cands.length) return {ranked:[], excluded};
+  const logs = cands.map(c=>Math.log10(Math.max(c.cost,0.01)));
+  const lo = Math.min(...logs), hi = Math.max(...logs);
+  cands.forEach((c,i)=>{
+    c.costScore = hi>lo ? (hi-logs[i])/(hi-lo) : 1;
+    c.score = c.cap * c.spd * (o.quality*c.exc + (1-o.quality)*c.costScore);
+  });
+  cands.sort((a,b)=>b.score-a.score || a.cost-b.cost);
+  const top = cands[0].score || 1;
+  cands.forEach(c=>{ c.pct = Math.round(c.score/top*100); });
+  return {ranked:cands, excluded};
+}
+
+function reasonsFor(c, o){
+  const r = [], m = c.m;
+  r.push(m.R>=c.nR ? `Meets the ${o.reasoning} reasoning need (${m.R}/5)` : `Below the reasoning need (${m.R}/5 against ${c.nR})`);
+  if(o.agentic!=='none') r.push(m.A>=c.nA ? `Reliable for ${o.agentic==='tools'?'tool calls':o.agentic==='multi'?'multi-step workflows':'screen control'} (${m.A}/5)` : `Agentic reliability ${m.A}/5 is below the need`);
+  if(o.modality!=='text') r.push(`Handles ${MODALITY_LABEL[o.modality]}`);
+  r.push(m.S>=c.nS ? `Fast enough for ${o.latency==='realtime'?'real-time':o.latency==='interactive'?'interactive':'batch'} use (${m.S}/5)` : `Slower than ideal for real-time use (${m.S}/5)`);
+  if(m.open) r.push(`Open weights (${m.open}), so it can run in your own region`);
+  return r;
+}
+
+function routingPlan(res, o){
+  if(!res.ranked.length) return null;
+  const top = res.ranked[0];
+  const pool = res.ranked.filter(c=>c.m.id!==top.m.id && c.cost < top.cost*0.6 && c.m.R>=2 && c.m.S>=4);
+  if(!pool.length) return null;
+  pool.sort((a,b)=>a.cost-b.cost);
+  const econ = pool[0];
+  const share = 0.3;
+  const routed = share*top.cost + (1-share)*econ.cost;
+  return {top, econ, share, routed, saving: top.cost>0 ? 1-routed/top.cost : 0};
+}
+
+const RULES = [
+  {re:/\b(video|audio|call recording|recordings?|voice|podcast|meeting)\b/i, set:{modality:'av'}, tag:'Audio or video input'},
+  {re:/\b(scan|scanned|ocr|image|images|photo|photos|id card|passport|receipt|invoice|drawing|drawings|diagram|form|forms|handwrit|screenshot)\b/i, set:{modality:'images'}, tag:'Images or scanned documents'},
+  {re:/\b(legacy|portal|screen|click|no api|desktop app|ui automation|browser)\b/i, set:{modality:'screens', agentic:'screens'}, tag:'Operates screens'},
+  {re:/\b(agent|agentic|workflow|automate|automation|book|update|api|crm|ticket|restore|bar|refund|approve|multi-step)\b/i, set:{agentic:'multi'}, tag:'Multi-step workflow'},
+  {re:/\b(search|retriev|rag|knowledge base|lookup|look up|policy|policies|manual|faq)\b/i, set:{agentic:'tools'}, tag:'Retrieval or tool calls'},
+  {re:/\b(classify|classification|route|routing|tag|tagging|sentiment|intent|triage|summar)\b/i, set:{reasoning:'light'}, tag:'Light reasoning task'},
+  {re:/\b(legal|contract|compliance|regulat|medical|clinical|financial analysis|audit|risk|investment|diagnos)\b/i, set:{reasoning:'deep'}, tag:'High-stakes reasoning'},
+  {re:/\b(on-prem|on prem|self-host|self host|residency|sovereign|air-gapped|government data|phi|pii must)\b/i, set:{residency:'selfhost'}, tag:'Data must stay in your environment'},
+  {re:/\b(real-time|realtime|live chat|instant|voice bot|chatbot|customer chat)\b/i, set:{latency:'realtime'}, tag:'Real-time responses'},
+  {re:/\b(batch|overnight|nightly|backlog|bulk)\b/i, set:{latency:'batch'}, tag:'Batch processing'}
+];
+function analyze(text){
+  const set = {}, tags = [];
+  for(const r of RULES){ if(r.re.test(text)){ Object.assign(set, r.set); tags.push(r.tag); } }
+  if(set.agentic==='multi' && /\b(search|rag|knowledge|policy)\b/i.test(text) && !/\b(update|restore|bar|book|refund|approve)\b/i.test(text)) set.agentic='tools';
+  const n = text.match(/(\d[\d,\.]*)\s*(k|thousand|m|million)?\s*(requests|transactions|calls|tickets|documents|docs|conversations|messages|queries)?\s*(per|a|\/)\s*day/i);
+  if(n){ let v = parseFloat(n[1].replace(/,/g,'')); const u=(n[2]||'').toLowerCase(); if(u==='k'||u==='thousand') v*=1e3; if(u==='m'||u==='million') v*=1e6; set.reqs=Math.round(v); tags.push(`${set.reqs.toLocaleString('en-US')} requests a day`); }
+  return {set, tags};
+}
+
+const PRESETS = [
+  {id:'billing',h:'Telecom billing agent',tag:'Agentic',from:'du: an agent that checks payment status and ID expiry, then restores or bars the line and replies to the customer.',desc:'Agent checks the customer\'s payment status and ID expiry in the billing system, decides whether to restore or bar the line, updates the CRM and replies. About 20,000 requests per day.',o:{modality:'text',reasoning:'moderate',agentic:'multi',reqs:20000,tin:3000,tout:600,latency:'interactive',residency:'cloud',quality:0.6}},
+  {id:'kyc',h:'KYC ID document check',tag:'Vision',from:'du: reading a customer ID to confirm whether it has expired before any suspension.',desc:'Read scanned customer ID cards, extract name, number and expiry date, and flag expired IDs. About 5,000 documents per day.',o:{modality:'images',reasoning:'light',agentic:'none',reqs:5000,tin:1500,tout:200,latency:'interactive',residency:'cloud',quality:0.45}},
+  {id:'rag',h:'Policy PDF knowledge assistant',tag:'Knowledge',from:'Ras Al Khaimah Municipality: a GenAI tool that turned procedural PDFs into conversational answers for engineers.',desc:'Engineers ask questions and the assistant searches procedural policy PDFs with RAG and answers with citations. About 2,000 questions per day.',o:{modality:'text',reasoning:'moderate',agentic:'tools',reqs:2000,tin:8000,tout:700,latency:'interactive',residency:'cloud',quality:0.7}},
+  {id:'drawings',h:'Engineering drawing review',tag:'Vision',from:'Ras Al Khaimah Municipality: pre-checking drawing submissions before an engineer reviews them.',desc:'Review engineering drawing images against submission rules and list missing items for the engineer. About 300 drawings per day, processed in batch.',o:{modality:'images',reasoning:'deep',agentic:'none',reqs:300,tin:6000,tout:1500,latency:'batch',residency:'cloud',quality:0.8}},
+  {id:'legacy',h:'Legacy portal automation',tag:'Agentic',from:'Hrud.ai: client back-office tools that only have a screen and no integration.',desc:'Agent logs in to a legacy portal with no API, clicks through screens and updates records for a client. About 1,000 tasks per day in batch.',o:{modality:'screens',reasoning:'moderate',agentic:'screens',reqs:1000,tin:10000,tout:1000,latency:'batch',residency:'cloud',quality:0.7}},
+  {id:'intent',h:'Contact-centre intent routing',tag:'High volume',from:'du self-service: deciding which journey or agent should handle each incoming message.',desc:'Classify the intent of each incoming customer chat message and route it in real time. About 100,000 messages per day.',o:{modality:'text',reasoning:'light',agentic:'none',reqs:100000,tin:400,tout:20,latency:'realtime',residency:'cloud',quality:0.2}},
+  {id:'private',h:'In-region public-sector assistant',tag:'Private',from:'Government work: services where citizen data must stay in the organization\'s own environment.',desc:'Government assistant answers staff questions using internal policy search. Data residency requires self-host on-prem. About 3,000 questions per day.',o:{modality:'text',reasoning:'moderate',agentic:'tools',reqs:3000,tin:4000,tout:600,latency:'interactive',residency:'selfhost',quality:0.6}},
+  {id:'callqa',h:'Call recording quality review',tag:'Audio',from:'Ufone: contact-centre quality management, scaled with AI review of recorded calls.',desc:'Score recorded customer calls against a quality checklist and summarize coaching points. About 2,000 call recordings per day, nightly batch.',o:{modality:'av',reasoning:'moderate',agentic:'none',reqs:2000,tin:20000,tout:800,latency:'batch',residency:'cloud',quality:0.5}},
+  {id:'contract',h:'Contract and compliance review',tag:'High stakes',from:'Enterprise clients: regulatory and contract analysis where an error is costly.',desc:'Review vendor contracts for compliance and risk clauses and draft findings for legal sign-off. About 200 contracts per day.',o:{modality:'text',reasoning:'deep',agentic:'none',reqs:200,tin:30000,tout:2000,latency:'batch',residency:'cloud',quality:0.9}}
+];
+
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const usd = v => v==null ? 'n/a' : '$' + (v<1 ? v.toFixed(2) : (Number.isInteger(v) ? v : v.toFixed(2)));
+const money = v => v>=1000 ? '$'+Math.round(v).toLocaleString('en-US') : v>=10 ? '$'+Math.round(v) : '$'+v.toFixed(2);
+const segs = (n,cls='segs') => `<span class="${cls}">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+const byId = id => MODELS.find(m=>m.id===id);
+
+/* tabs */
+const TABS = ['framework','models','recommender','usecases','cost'];
+function show(id, scroll=true){
+  if(!TABS.includes(id)) id='framework';
+  TABS.forEach(t=>{ $('#'+t).hidden = t!==id; $('#t-'+t).setAttribute('aria-selected', t===id?'true':'false'); });
+  try{ history.replaceState(null,'','#'+id); }catch(e){}
+  if(scroll){ const y = $('#'+id).getBoundingClientRect().top + window.scrollY - 80; window.scrollTo({top:Math.max(0,y), behavior:'smooth'}); }
+}
+TABS.forEach(t=> $('#t-'+t).addEventListener('click', ()=>show(t)));
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.go)));
+document.querySelector('.tabs').addEventListener('keydown', e=>{
+  const i = TABS.findIndex(t=>$('#t-'+t).getAttribute('aria-selected')==='true');
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ const n=(i+(e.key==='ArrowRight'?1:-1)+TABS.length)%TABS.length; show(TABS[n],false); $('#t-'+TABS[n]).focus(); e.preventDefault(); }
+});
+
+/* orbit */
+$('#ring').innerHTML = MODELS.map((m,i)=>`<button class="node" style="--i:${i}" data-open="${m.id}" aria-label="Open ${m.n}"><b>${m.n}</b><small><span class="dot d-${m.prov}"></span>${usd(m.out)} out · ${m.tier}</small></button>`).join('');
+$('#ring').addEventListener('click', e=>{ const b=e.target.closest('[data-open]'); if(b) openModel(b.dataset.open); });
+function openModel(id){
+  prov='all'; $$('#provFilter .chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.f==='all'?'true':'false'));
+  setView('cards'); renderCards(); show('models');
+  setTimeout(()=>{ const el=document.getElementById('card-'+id); if(el){ el.classList.add('flip'); el.scrollIntoView({behavior:'smooth',block:'center'}); el.querySelector('.back .flipbtn')?.focus({preventScroll:true}); } }, 350);
+}
+
+/* framework */
+const SAVES = PRESETS.map(p=>{const r=recommend(p.o); const rp=routingPlan(r,p.o); return rp?rp.saving:null;}).filter(x=>x!=null);
+const AVG_SAVE = Math.round(SAVES.reduce((a,b)=>a+b,0)/SAVES.length*100);
+const maxOut = Math.max(...MODELS.map(m=>m.out)), minOut = Math.min(...MODELS.map(m=>m.out));
+$('#st-spread').textContent = Math.round(maxOut/minOut)+'x';
+const cheapest = MODELS.reduce((a,b)=>a.out<b.out?a:b);
+$('#findings').innerHTML = [
+  [Math.round(maxOut/minOut)+'x','Output prices span two orders of magnitude',`From ${usd(cheapest.out)} (${cheapest.n}) to ${usd(maxOut)} per 1M output tokens. Model choice is the single biggest lever on cost to serve.`],
+  ['1/5','Workhorse models come close to the flagships',`GPT-6.1 Sol nearly matches GPT-6 Astra on agentic work at one-fifth of the token price. Sonnet 5.5 runs about 30% faster than Opus 5.5 at half the price. Make a workhorse the default and escalate only when needed.`],
+  [MODELS.filter(m=>m.av).length+' of 12','Only Gemini reads audio and video natively',`For call recordings or video, the choice narrows to Google's three models. For scanned documents, ${MODELS.filter(m=>m.img).length} of the 12 models accept images.`],
+  ['3 open','Open weights answer the residency question',`DeepSeek V4 and Qwen3.8 can run in your own cloud region, which matters for public-sector and regulated clients. They still need a security and governance review.`],
+  [AVG_SAVE+'%','Routing beats picking one model',`Across the nine scenarios in this guide, sending only the hard 30% of requests to the best-fit model and the rest to an economy model cuts the monthly bill by ${AVG_SAVE}% on average. Try it in the Recommender.`]
+].map(([b,h,p])=>`<div class="finding"><span class="big num">${b}</span><div><h4>${h}</h4><p>${p}</p></div></div>`).join('');
+$('#relevance').innerHTML = [
+  ['du · Telecom','Usage decided the virtual assistant','At 1M+ conversations a year, response speed and cost per conversation mattered as much as quality. High volume favours workhorse and efficient tiers.','Usage'],
+  ['du · Telecom','Performance decided the billing agent','Restoring or barring a line is an irreversible action. Agentic reliability and human escalation came first, with cheap models only on the routing steps.','Performance'],
+  ['Ras Al Khaimah Municipality','Price and residency shaped the GenAI tool','Procedural PDFs for engineers needed grounded answers at a sustainable cost, inside government data rules. Retrieval plus a mid-tier model fits.','Price'],
+  ['Hrud.ai · Client automation','All three, per client','Each client workflow gets its own balance: model benchmarking on accuracy, latency and cost-to-serve, then routing to cut cost per query.','All pillars']
+].map(([w,h,p,t])=>`<article class="box rel"><span class="who">${w}</span><h4>${h}</h4><p>${p}</p><span class="pill t">${t}</span></article>`).join('');
+
+/* models: cards + table */
+let prov='all', view='cards', sortKey='blend', sortDir=1;
+function capsOf(m){ const c=['Text']; if(m.img) c.push('Images'); if(m.av) c.push('Audio and video'); if(m.cu) c.push('Screens'); return c; }
+function renderCards(){
+  const list = MODELS.filter(m=>prov==='all'||m.prov===prov);
+  $('#cards').innerHTML = list.map(m=>`
+  <div class="mcard" id="card-${m.id}">
+    <div class="tiltw"><div class="inner">
+      <div class="face">
+        <div class="mhead"><div><span class="pill"><span class="dot d-${m.prov}"></span>${m.maker}</span><h3 style="margin-top:10px">${m.n}</h3></div><span class="pill ${m.tier==='Frontier'?'t':''}">${m.tier}</span></div>
+        <div class="mprice"><b class="num">${usd(m.out)}</b><span>per 1M output · ${usd(m.in)} input</span></div>
+        <div class="caps">${m.open?`<span class="pill t">Open · ${m.open}</span>`:''}<span class="pill">${m.ctx} context</span></div>
+        <div class="ratings">
+          <div class="rt"><span>Reasoning</span>${segs(m.R)}</div>
+          <div class="rt"><span>Agentic</span>${segs(m.A)}</div>
+          <div class="rt"><span>Multimodal</span>${segs(m.M)}</div>
+          <div class="rt"><span>Speed</span>${segs(m.S)}</div>
+        </div>
+        <button type="button" class="flipbtn" aria-label="Show evidence for ${m.n}">Evidence and links →</button>
+      </div>
+      <div class="face back">
+        <h4>Evidence</h4><p>${m.ev}</p>
+        <h4>Best fit</h4><p>${m.best}</p>
+        <h4>Watch for</h4><p>${m.watch}</p>
+        <div class="caps">${capsOf(m).map(c=>`<span class="pill">${c}</span>`).join('')}</div>
+        <div class="links"><a href="${OFFICIAL[m.off]}" target="_blank" rel="noopener">Official pricing ↗</a>${m.src.map(s=>`<a href="${s[1]}" target="_blank" rel="noopener">${s[0]} ↗</a>`).join('')}</div>
+        <button type="button" class="flipbtn" aria-label="Back to ${m.n} scorecard">← Scorecard</button>
+      </div>
+    </div></div>
+  </div>`).join('');
+}
+$('#cards').addEventListener('click', e=>{ if(e.target.closest('a')) return; const c=e.target.closest('.mcard'); if(!c) return; c.classList.toggle('flip'); const f=c.classList.contains('flip'); c.querySelector(f?'.back .flipbtn':'.face:not(.back) .flipbtn')?.focus({preventScroll:true}); });
+$('#cards').addEventListener('pointermove', e=>{
+  const c=e.target.closest('.mcard'); if(!c||matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r=c.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+  c.style.setProperty('--ry',(x*10).toFixed(2)+'deg'); c.style.setProperty('--rx',(-y*10).toFixed(2)+'deg');
+});
+$('#cards').addEventListener('pointerout', e=>{ const c=e.target.closest('.mcard'); if(c && !c.contains(e.relatedTarget)){ c.style.setProperty('--ry','0deg'); c.style.setProperty('--rx','0deg'); } });
+
+const COLS = [
+  ['n','Model'],['maker','Provider'],['tier','Tier'],['in','Input $','r'],['out','Output $','r'],['blend','Blended $','r'],
+  ['R','Reasoning'],['A','Agentic'],['M','Multimodal'],['S','Speed'],['ctx','Context'],['d','Released'],['open','Weights'],['links','Links']
+];
+function renderTable(){
+  $('#thead').innerHTML = COLS.map(([k,l,c])=>`<th scope="col" class="${c||''}" data-k="${k}" ${k===sortKey?`aria-sort="${sortDir>0?'ascending':'descending'}"`:''} tabindex="${k==='links'?-1:0}">${l}</th>`).join('');
+  let list = MODELS.filter(m=>prov==='all'||m.prov===prov);
+  list = [...list].sort((a,b)=>{ const x=a[sortKey], y=b[sortKey]; if(typeof x==='string'||typeof y==='string') return String(x||'').localeCompare(String(y||''))*sortDir; return ((x??-1)-(y??-1))*sortDir; });
+  $('#tbody').innerHTML = list.map(m=>`<tr>
+    <td><b>${m.n}</b></td><td><span class="dot d-${m.prov}"></span> ${m.maker}</td><td>${m.tier}</td>
+    <td class="r num mono">${usd(m.in)}</td><td class="r num mono">${usd(m.out)}</td><td class="r num mono">${usd(+m.blend.toFixed(2))}</td>
+    <td>${segs(m.R,'mini')}</td><td>${segs(m.A,'mini')}</td><td>${segs(m.M,'mini')}</td><td>${segs(m.S,'mini')}</td>
+    <td>${m.ctx}</td><td class="num" style="white-space:nowrap">${m.dl}</td><td>${m.open?`<span class="pill t">${m.open}</span>`:'<span class="pill">Closed</span>'}</td>
+    <td style="white-space:nowrap"><a href="${OFFICIAL[m.off]}" target="_blank" rel="noopener">Pricing ↗</a> · <a href="${m.src[0][1]}" target="_blank" rel="noopener">Source ↗</a></td></tr>`).join('');
+}
+function sortBy(k){ if(k==='links') return; if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir = ['R','A','M','S','d'].includes(k)?-1:1; } renderTable(); }
+$('#thead').addEventListener('click', e=>{ const th=e.target.closest('th'); if(th) sortBy(th.dataset.k); });
+$('#thead').addEventListener('keydown', e=>{ const th=e.target.closest('th'); if(th&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); sortBy(th.dataset.k); } });
+function setView(v){ view=v; $$('.view-toggle button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===v?'true':'false')); $('#cards').hidden = v!=='cards'; $('#tableWrap').hidden = v!=='table'; }
+$('.view-toggle').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b){ setView(b.dataset.v); } });
+$('#provFilter').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; prov=b.dataset.f; $$('#provFilter .chip').forEach(c=>c.setAttribute('aria-pressed', c===b?'true':'false')); renderCards(); renderTable(); });
+
+/* recommender */
+const state = {modality:'text',reasoning:'moderate',agentic:'tools',latency:'interactive',residency:'cloud'};
+function syncSegs(){ $$('.seg').forEach(g=>{ const k=g.dataset.k; g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===state[k]?'true':'false')); }); }
+$$('.seg').forEach(g=>g.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; state[g.dataset.k]=b.dataset.v;
+  if(g.dataset.k==='modality' && b.dataset.v==='screens') state.agentic='screens';
+  if(g.dataset.k==='agentic' && b.dataset.v==='screens') state.modality='screens';
+  if(g.dataset.k==='modality' && b.dataset.v!=='screens' && state.agentic==='screens') state.agentic='multi';
+  if(g.dataset.k==='agentic' && b.dataset.v!=='screens' && state.modality==='screens') state.modality='text';
+  syncSegs(); runRec(); }));
+function opts(){ return {...state, reqs:+$('#reqs').value||0, tin:+$('#tin').value||0, tout:+$('#tout').value||0, quality:(+$('#quality').value)/100}; }
+function qLabel(v){ return v<=25?'Lowest cost':v<=45?'Cost first':v<=65?'Balanced':v<=85?'Quality first':'Highest quality'; }
+let lastTop=null;
+function runRec(){
+  const o = opts(); $('#qOut').textContent = qLabel(+$('#quality').value);
+  const res = recommend(o);
+  if(!res.ranked.length){ $('#result').innerHTML = `<div class="box empty"><h3>No model fits every requirement</h3><p style="margin-top:6px">${res.excluded.slice(0,3).map(x=>x.m.n+': '+x.why).join('. ')}. Relax the input type or residency setting.</p></div>`; return; }
+  const top = res.ranked[0], rp = routingPlan(res, o), why = reasonsFor(top, o);
+  const C = 2*Math.PI*52, off = C*(1-top.cap*top.spd);
+  const html = `
+  <div class="topcard${lastTop!==top.m.id?' pop':''}" id="topcard"><div class="tc">
+    <div class="ringw"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg>
+      <div class="lbl"><div><b class="num">${Math.round(top.cap*top.spd*100)}%</b><span>requirement fit</span></div></div></div>
+    <div>
+      <span class="eyebrow">Best fit</span>
+      <h3>${top.m.n}</h3>
+      <div class="caps"><span class="pill"><span class="dot d-${top.m.prov}"></span>${top.m.maker}</span><span class="pill">${top.m.tier}</span><span class="pill t">${money(top.cost)} / month</span></div>
+      <ul class="why">${why.map(w=>`<li class="${/Below|below|Slower/.test(w)?'no':''}">${w}</li>`).join('')}</ul>
+    </div>
+  </div></div>
+  <div class="kpis">
+    <div class="kpi"><span>Monthly cost on ${top.m.n}</span><b class="num">${money(top.cost)}</b></div>
+    <div class="kpi"><span>Cost per 1,000 transactions</span><b class="num">${money(o.reqs? top.cost/(o.reqs*30)*1000 : 0)}</b></div>
+    <div class="kpi"><span>${rp?'With routing':'Models that qualify'}</span><b class="num">${rp? money(rp.routed) : res.ranked.length+' of 12'}</b></div>
+  </div>
+  ${rp?`<div class="box sec"><h3>Routing plan · save about ${Math.round(rp.saving*100)}%</h3>
+    <div class="route"><div class="leg"><span>Hard 30% of requests</span><b>${rp.top.m.n}</b><span>${money(rp.top.cost*rp.share)} / month</span></div><div class="arrow">ROUTER<br>→</div><div class="leg"><span>Simple 70% (classify, extract, draft)</span><b>${rp.econ.m.n}</b><span>${money(rp.econ.cost*(1-rp.share))} / month</span></div></div>
+    <p class="muted" style="font-size:12.5px">Assumes 30% of requests need the best-fit model. Tune the split in the Cost lab.</p></div>`:''}
+  <div class="box sec"><h3>Full ranking</h3><div class="rank">${res.ranked.map((c,i)=>`<button type="button" class="rrow" data-open="${c.m.id}" aria-label="Open ${c.m.n} card"><span class="n">${String(i+1).padStart(2,'0')}</span><span><b style="font-weight:600">${c.m.n}</b> <span class="muted" style="font-size:12px">· ${c.m.maker}</span></span><span class="bar"><i style="width:${c.pct}%"></i></span><span class="v num">${money(c.cost)}</span></button>`).join('')}</div>
+  ${res.excluded.length?`<div class="excl" style="margin-top:8px"><span style="font-size:12.5px">Removed before scoring</span>${res.excluded.map(x=>`<div><b>${x.m.n}</b><span>${x.why}</span></div>`).join('')}</div>`:''}</div>`;
+  $('#result').innerHTML = html; lastTop = top.m.id;
+}
+$('#result').addEventListener('click', e=>{ const b=e.target.closest('[data-open]'); if(b) openModel(b.dataset.open); });
+$('#result').addEventListener('pointermove', e=>{ const t=$('#topcard'); if(!t||!t.contains(e.target)||matchMedia('(prefers-reduced-motion: reduce)').matches) return; const r=t.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; t.style.setProperty('--ry',(x*8).toFixed(2)+'deg'); t.style.setProperty('--rx',(-y*8).toFixed(2)+'deg'); });
+$('#result').addEventListener('pointerleave', ()=>{ const t=$('#topcard'); if(t){ t.style.setProperty('--ry','0deg'); t.style.setProperty('--rx','0deg'); } });
+['reqs','tin','tout','quality'].forEach(id=>$('#'+id).addEventListener('input', runRec));
+$('#recForm').addEventListener('submit', e=>{ e.preventDefault(); applyText($('#desc').value); });
+function applyText(t){
+  const a = analyze(t);
+  Object.keys(a.set).forEach(k=>{ if(k==='reqs') $('#reqs').value=a.set.reqs; else state[k]=a.set[k]; });
+  $('#detect').innerHTML = a.tags.length ? a.tags.map(x=>`<span class="pill t">${x}</span>`).join('') : '<span class="muted" style="font-size:12.5px">No strong signals found. Set the fields below directly.</span>';
+  syncSegs(); runRec();
+}
+function applyPreset(p){
+  $('#desc').value = p.desc; Object.assign(state, {modality:p.o.modality, reasoning:p.o.reasoning, agentic:p.o.agentic, latency:p.o.latency, residency:p.o.residency});
+  $('#reqs').value=p.o.reqs; $('#tin').value=p.o.tin; $('#tout').value=p.o.tout; $('#quality').value=Math.round(p.o.quality*100);
+  $('#detect').innerHTML = `<span class="pill t">Scenario: ${p.h}</span>`;
+  $$('#presetChips .chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.p===p.id?'true':'false'));
+  syncSegs(); runRec();
+}
+$('#presetChips').innerHTML = PRESETS.map(p=>`<button class="chip" aria-pressed="false" data-p="${p.id}">${p.h}</button>`).join('');
+$('#presetChips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(b) applyPreset(PRESETS.find(p=>p.id===b.dataset.p)); });
+
+/* use cases */
+const CASE_TAGS = ['All', ...new Set(PRESETS.map(p=>p.tag))];
+$('#caseFilter').innerHTML = CASE_TAGS.map((t,i)=>`<button class="chip" aria-pressed="${i===0}" data-f="${t}">${t}</button>`).join('');
+function renderCases(f='All'){
+  $('#ucases').innerHTML = PRESETS.filter(p=>f==='All'||p.tag===f).map(p=>{
+    const r = recommend(p.o), top=r.ranked[0], rp=routingPlan(r,p.o);
+    return `<article class="box ucase"><span class="pill" style="align-self:flex-start">${p.tag}</span><h3 style="font-size:18px">${p.h}</h3><p class="from">${p.from}</p>
+    <div class="res"><div><span>Best fit</span><b>${top?top.m.n:'None'}</b></div><div><span>Runner-up</span><span>${r.ranked[1]?r.ranked[1].m.n:'None'}</span></div>
+    <div><span>Monthly</span><span class="num">${top?money(top.cost):'n/a'}${rp?` · ${money(rp.routed)} routed`:''}</span></div></div>
+    <button class="btn" data-preset="${p.id}" style="align-self:flex-start;min-height:40px;padding:9px 14px">Open in Recommender →</button></article>`;}).join('');
+}
+$('#caseFilter').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $$('#caseFilter .chip').forEach(c=>c.setAttribute('aria-pressed', c===b?'true':'false')); renderCases(b.dataset.f); });
+$('#ucases').addEventListener('click', e=>{ const b=e.target.closest('[data-preset]'); if(!b) return; applyPreset(PRESETS.find(p=>p.id===b.dataset.preset)); show('recommender'); });
+
+/* cost lab */
+const optHtml = MODELS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
+$('#c-prem').innerHTML=optHtml; $('#c-econ').innerHTML=optHtml; $('#c-prem').value='opus'; $('#c-econ').value='gflash';
+function runCost(){
+  const r=+$('#c-reqs').value||0, a=+$('#c-tin').value||0, b=+$('#c-tout').value||0, s=(+$('#c-share').value)/100;
+  const list = MODELS.map(m=>({m,c:monthlyCost(m,r,a,b)})).sort((x,y)=>x.c-y.c), max=Math.max(...list.map(x=>x.c),1);
+  $('#c-costs').innerHTML = list.map(x=>`<div class="crow"><span><span class="dot d-${x.m.prov}"></span> ${x.m.n}</span><span class="bar"><i style="width:${(x.c/max*100).toFixed(1)}%"></i></span><span class="v num">${money(x.c)}</span></div>`).join('');
+  const p=byId($('#c-prem').value), e=byId($('#c-econ').value), all=monthlyCost(p,r,a,b), routed=s*all+(1-s)*monthlyCost(e,r,a,b);
+  $('#c-shareOut').textContent=Math.round(s*100)+'%'; $('#c-routed').textContent=money(routed);
+  $('#c-save').textContent = all>0 ? `${Math.round((1-routed/all)*100)}% less than ${p.n} alone (${money(all)})` : '';
+}
+['c-reqs','c-tin','c-tout','c-share','c-prem','c-econ'].forEach(id=>$('#'+id).addEventListener('input', runCost));
+
+/* sources */
+const srcs = new Map([['Anthropic pricing',OFFICIAL.anthropic],['OpenAI API pricing',OFFICIAL.openai],['Gemini API pricing',OFFICIAL.google],['DeepSeek API pricing',OFFICIAL.deepseek],['Qwen on Hugging Face',OFFICIAL.qwen]]);
+MODELS.forEach(m=>m.src.forEach(([t,u])=>srcs.set(`${m.n}: ${t}`,u)));
+srcs.set('GPT-6 Sol and Luna benchmarks','https://computingforgeeks.com/gpt-6-sol-luna-released-features-benchmarks/');
+$('#srcList').innerHTML = [...srcs].map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${t}</a></li>`).join('');
+
+/* boot */
+renderCards(); renderTable(); renderCases(); applyPreset(PRESETS[0]); runCost();
+const h = (location.hash||'').slice(1); show(TABS.includes(h)?h:'framework', false);
+</script>
+
+</body>
+</html>
